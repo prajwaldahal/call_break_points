@@ -1,5 +1,7 @@
-import 'package:call_break_points/homeScreen.dart';
-import 'package:call_break_points/theme/app_themes.dart';
+import 'package:get/get_navigation/src/root/get_material_app.dart';
+
+import 'screen/home_screen.dart';
+import 'theme/app_themes.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -11,7 +13,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Call Break Points',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.system,
