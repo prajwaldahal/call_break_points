@@ -192,7 +192,7 @@ class ScoreController extends GetxController {
   Future<void> resetGame() async {
     try {
       await dbHelper.deleteRoundsForGame(_gameId.value);
-      //here
+      _currentRound.value = 1;
       _rounds.clear();
       _roundRows.clear();
       _winnerList.clear();
