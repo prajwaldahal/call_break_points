@@ -2,8 +2,8 @@ class RoundScore {
   final String gameId;
   final int playerId;
   final int roundNumber;
-  final int bid;
-  final int score;
+  late final int bid;
+  late final double score;
 
   RoundScore({
     required this.gameId,

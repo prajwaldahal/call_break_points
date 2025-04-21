@@ -1,8 +1,9 @@
-import 'package:get/get_navigation/src/root/get_material_app.dart';
-
-import 'screen/home_screen.dart';
-import 'theme/app_themes.dart';
+import 'package:call_break_points/views/game_screen.dart';
+import 'package:call_break_points/views/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import 'theme/app_themes.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +20,12 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
-      home: const HomePage(),
+      initialRoute: '/',
+      getPages: [
+        GetPage(name: '/', page: () => HomePage()),
+        GetPage(name: '/game-detail', page: () => GameScreen()),
+      ],
+      home: HomePage(),
     );
   }
 }

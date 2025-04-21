@@ -1,14 +1,15 @@
-import 'player_model.dart';
+import 'package:call_break_points/models/player_model.dart';
 
 class Game {
-  final String _gameId;
+  final String id;
   final List<Player> participants;
 
-  String get gameId => _gameId;
+  Game({required this.participants, String? gameId})
+    : id = gameId ?? DateTime.now().millisecondsSinceEpoch.toString();
 
-  Game({required this.participants})
-    : _gameId = DateTime.now().millisecondsSinceEpoch.toString();
+  factory Game.fromMap(Map<String, dynamic> map, List<Player> participants) {
+    return Game(gameId: map['game_id'], participants: participants);
+  }
 
-  factory Game.fromMap(Map<String, dynamic> map, List<Player> participants) =>
-      Game(participants: participants);
+  Map<String, dynamic> toMap() => {'game_id': id};
 }
