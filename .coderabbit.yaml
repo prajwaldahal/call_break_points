@@ -1,5 +1,0 @@
-reviews:
-  exclude:
-    - 'docs/**'
-  approve:
-    auto: false
