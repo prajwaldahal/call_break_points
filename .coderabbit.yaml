@@ -3,4 +3,3 @@ reviews:
     - 'docs/**'
   approve:
     auto: false
-tone: friendly
