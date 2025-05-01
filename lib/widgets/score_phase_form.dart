@@ -22,6 +22,11 @@ class _ScorePhaseFormState extends State<ScorePhaseForm> {
       widget.controller.players.length,
       (_) => FocusNode(),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_focusNodes.isNotEmpty) {
+        _focusNodes[0].requestFocus();
+      }
+    });
   }
 
   @override

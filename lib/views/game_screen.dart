@@ -27,18 +27,31 @@ class GameScreen extends StatelessWidget {
           case RoundState.finalized:
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  StepIndicator(controller: controller),
-                  const SizedBox(height: 16),
-                  PhaseCard(controller: controller),
-                  const SizedBox(height: 24),
-                  RoundTable(controller: controller),
-                  const SizedBox(height: 24),
-                  if (controller.roundState == RoundState.finalized &&
-                      controller.winnerList.isNotEmpty)
-                    Center(child: WinnerTable(controller: controller)),
-                ],
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height,
+                ),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      StepIndicator(controller: controller),
+                      const SizedBox(height: 16),
+                      PhaseCard(controller: controller),
+                      const SizedBox(height: 24),
+                      if (controller.roundState == RoundState.finalized &&
+                          controller.winnerList.isNotEmpty)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [WinnerTable(controller: controller)],
+                        ),
+                      const SizedBox(height: 24),
+                      RoundTable(controller: controller),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ),
             );
           case RoundState.loading:
@@ -317,9 +330,7 @@ class RoundTable extends StatelessWidget {
             cells: [
               DataCell(
                 Text(
-                  row.roundNumber == null
-                      ? 'Total'
-                      : 'Round ${row.roundNumber}',
+                  row.roundNumber == null ? 'Total' : '${row.roundNumber}',
                   style: Get.textTheme.bodyLarge!.copyWith(
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Roboto',
@@ -454,17 +465,11 @@ class WinnerTable extends StatelessWidget {
             .toList();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.star, color: Colors.amber),
-            const SizedBox(width: 8),
-            Text(
-              'Winners',
-              style: Get.textTheme.titleMedium!.copyWith(fontFamily: 'Roboto'),
-            ),
-          ],
+        Text(
+          'Winners',
+          style: Get.textTheme.titleMedium!.copyWith(fontFamily: 'Roboto'),
         ),
         const SizedBox(height: 8),
         SingleChildScrollView(
