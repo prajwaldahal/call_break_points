@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../controller/score_controller.dart';
 import '../models/player_model.dart';
@@ -52,6 +53,7 @@ class _ScorePhaseFormState extends State<ScorePhaseForm> {
                 signed: false,
                 decimal: false,
               ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               textInputAction:
                   index < widget.controller.players.length - 1
                       ? TextInputAction.next

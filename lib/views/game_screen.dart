@@ -18,46 +18,51 @@ class GameScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _GameAppBar(controller: controller),
-      body: Obx(() {
-        switch (controller.roundState) {
-          case RoundState.error:
-            return const Center(child: Text('Error loading game data'));
-          case RoundState.biddingInProgress:
-          case RoundState.scoringInProgress:
-          case RoundState.finalized:
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height,
-                ),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      StepIndicator(controller: controller),
-                      const SizedBox(height: 16),
-                      PhaseCard(controller: controller),
-                      const SizedBox(height: 24),
-                      if (controller.roundState == RoundState.finalized &&
-                          controller.winnerList.isNotEmpty)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [WinnerTable(controller: controller)],
-                        ),
-                      const SizedBox(height: 24),
-                      RoundTable(controller: controller),
-                      const SizedBox(height: 24),
-                    ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.grey.shade100, Colors.grey.shade50],
+          ),
+        ),
+        child: Obx(() {
+          switch (controller.roundState) {
+            case RoundState.error:
+              return const Center(child: Text('Error loading game data'));
+            case RoundState.biddingInProgress:
+            case RoundState.scoringInProgress:
+            case RoundState.finalized:
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ListBody(
+                      children: [
+                        StepIndicator(controller: controller),
+                        const SizedBox(height: 24),
+                        PhaseCard(controller: controller),
+                        const SizedBox(height: 24),
+                        if (controller.roundState == RoundState.finalized &&
+                            controller.winnerList.isNotEmpty)
+                          WinnerTable(controller: controller),
+                        const SizedBox(height: 24),
+                        RoundTable(controller: controller),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          case RoundState.loading:
-            return const Center(child: CircularProgressIndicator());
-        }
-      }),
+              );
+            case RoundState.loading:
+              return const Center(child: CircularProgressIndicator());
+          }
+        }),
+      ),
     );
   }
 }
@@ -70,19 +75,33 @@ class _GameAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       title: Obx(
-        () => Text('Round ${controller.currentRound}', style: _appBarTextStyle),
+        () => Column(
+          children: [
+            Text(
+              controller.currentRound < 6 ? 'CURRENT ROUND' : 'WINNER LIST',
+              style: _appBarSubtitleStyle,
+            ),
+            Text('${controller.currentRound}', style: _appBarTitleStyle),
+          ],
+        ),
       ),
       centerTitle: true,
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh),
+          icon: Icon(Icons.restart_alt, color: Colors.grey.shade700),
           onPressed:
               () => Get.defaultDialog(
                 title: 'Confirm Reset',
+                titleStyle: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.bold,
+                ),
                 middleText:
                     'This will delete all round data and start over. Continue?',
+                middleTextStyle: const TextStyle(fontFamily: 'Roboto'),
                 textConfirm: 'Yes',
                 textCancel: 'No',
+                confirmTextColor: Colors.white,
                 onConfirm: () {
                   controller.resetGame();
                   Get.back();
@@ -96,10 +115,18 @@ class _GameAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-  TextStyle get _appBarTextStyle => TextStyle(
+  TextStyle get _appBarTitleStyle => const TextStyle(
     fontFamily: 'Roboto',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: FontWeight.bold,
+    color: Colors.black87,
+  );
+
+  TextStyle get _appBarSubtitleStyle => const TextStyle(
+    fontFamily: 'Roboto',
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: Colors.grey,
   );
 }
 
@@ -110,43 +137,85 @@ class StepIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      return Flex(
-        direction: Axis.horizontal,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _stepCircle(
-            'B',
-            controller.roundState == RoundState.biddingInProgress,
-          ),
-          _stepLine(),
-          _stepCircle(
-            'S',
-            controller.roundState == RoundState.scoringInProgress,
-          ),
-          _stepLine(),
-          _stepCircle('W', controller.roundState == RoundState.finalized),
-        ],
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(40),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withAlpha(1),
+              spreadRadius: 2,
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Flex(
+          direction: Axis.horizontal,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildStep('Bidding', Icons.gavel, RoundState.biddingInProgress),
+            _stepLine(),
+            _buildStep('Scoring', Icons.score, RoundState.scoringInProgress),
+            _stepLine(),
+            _buildStep('Results', Icons.emoji_events, RoundState.finalized),
+          ],
+        ),
       );
     });
   }
 
-  Widget _stepCircle(String label, bool active) => CircleAvatar(
-    radius: 20,
-    backgroundColor: active ? Get.theme.primaryColor : Colors.grey.shade400,
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-      ),
-    ),
-  );
+  Widget _buildStep(String label, IconData icon, RoundState state) {
+    final isActive = controller.roundState.index >= state.index;
+    final isCurrent = controller.roundState == state;
 
-  Widget _stepLine() => SizedBox(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: isActive ? _getStepColor(state) : Colors.grey.shade300,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: isActive ? Colors.white : Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 12,
+              color: isCurrent ? Colors.black : Colors.grey,
+              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStepColor(RoundState state) {
+    switch (state) {
+      case RoundState.biddingInProgress:
+        return Colors.blue.shade600;
+      case RoundState.scoringInProgress:
+        return Colors.green.shade600;
+      case RoundState.finalized:
+        return Colors.orange.shade600;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _stepLine() => Container(
     width: 40,
     height: 2,
-    child: DecoratedBox(decoration: BoxDecoration(color: Colors.grey.shade400)),
+    margin: const EdgeInsets.only(bottom: 20),
+    color: Colors.grey.shade300,
   );
 }
 
@@ -175,27 +244,82 @@ class BidPhaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(1),
+            spreadRadius: 2,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Flex(
-          direction: Axis.vertical,
+        padding: const EdgeInsets.all(20),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Bidding Phase',
-              style: Get.textTheme.titleMedium!.copyWith(fontFamily: 'Roboto'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade100,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Set Bids',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
             ...controller.players.map(
               (p) => BidRow(player: p, controller: controller),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.submitBids,
-              child: const Text('Submit Bids'),
+            Center(
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade50,
+                    foregroundColor: Colors.blueGrey.shade800,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Colors.blueGrey.shade100,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  onPressed: controller.submitBids,
+                  child: const Text(
+                    'Confirm Bids',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -212,30 +336,48 @@ class BidRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
           Expanded(
             child: Text(
               player.name,
-              style: TextStyle(fontFamily: 'Roboto', fontSize: 16),
-              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade700,
+              ),
             ),
           ),
           SizedBox(
-            width: 200,
+            width: 180,
             child: GetBuilder<ScoreController>(
               id: 'bid_${player.playerId}',
               builder: (_) {
                 final bid = controller.bids[player.playerId] ?? 1;
-                return Slider(
-                  min: 1,
-                  max: 8,
-                  divisions: 7,
-                  value: bid.toDouble(),
-                  label: '$bid',
-                  onChanged:
-                      (v) => controller.updateBid(player.playerId!, v.toInt()),
+                return SliderTheme(
+                  data: SliderThemeData(
+                    activeTrackColor: Colors.blueGrey.shade600,
+                    inactiveTrackColor: Colors.blueGrey.shade100,
+                    thumbColor: Colors.white,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 10,
+                      elevation: 2,
+                    ),
+                    trackHeight: 4,
+                    overlayColor: Colors.transparent,
+                  ),
+                  child: Slider(
+                    min: 1,
+                    max: 8,
+                    divisions: 7,
+                    value: bid.toDouble(),
+                    label: '$bid',
+                    onChanged:
+                        (v) =>
+                            controller.updateBid(player.playerId!, v.toInt()),
+                  ),
                 );
               },
             ),
@@ -244,12 +386,16 @@ class BidRow extends StatelessWidget {
             id: 'bid_${player.playerId}',
             builder: (_) {
               final bid = controller.bids[player.playerId] ?? 1;
-              return Text(
-                '$bid',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Roboto',
-                  fontSize: 18,
+              return SizedBox(
+                width: 36,
+                child: Text(
+                  '$bid',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade800,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               );
             },
@@ -266,25 +412,62 @@ class ScorePhaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [Colors.green.shade50, Colors.white],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.shade100,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Flex(
-          direction: Axis.vertical,
+        padding: const EdgeInsets.all(20),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Scoring Phase',
-              style: Get.textTheme.titleMedium!.copyWith(fontFamily: 'Roboto'),
+            Row(
+              children: [
+                Icon(Icons.score, color: Colors.green.shade800),
+                const SizedBox(width: 8),
+                Text(
+                  'Scoring Phase',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             ScorePhaseForm(controller: controller),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: controller.submitScores,
-              child: const Text('Submit Scores'),
+            Center(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.arrow_forward, size: 20),
+                label: const Text('Submit Scores'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: controller.submitScores,
+              ),
             ),
           ],
         ),
@@ -299,83 +482,106 @@ class RoundTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final columns = <DataColumn>[
-      DataColumn(
-        label: Text(
-          'Round',
-          style: Get.textTheme.bodyLarge!.copyWith(
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Roboto',
-            fontSize: 16,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(1),
+            spreadRadius: 2,
+            blurRadius: 8,
           ),
-        ),
+        ],
       ),
-      ...controller.players.map(
-        (p) => DataColumn(
-          label: Text(
-            p.name,
-            style: Get.textTheme.bodyLarge!.copyWith(
-              fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columnSpacing: 32,
+            horizontalMargin: 16,
+            headingTextStyle: TextStyle(
               fontFamily: 'Roboto',
-              fontSize: 16,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
             ),
-          ),
-        ),
-      ),
-    ];
-
-    final rows =
-        controller.roundRows.map((row) {
-          return DataRow(
-            cells: [
-              DataCell(
-                Text(
-                  row.roundNumber == null ? 'Total' : '${row.roundNumber}',
-                  style: Get.textTheme.bodyLarge!.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Roboto',
-                    fontSize: 16,
-                  ),
-                ),
+            dataTextStyle: const TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            columns: [
+              DataColumn(label: _buildHeaderCell('Round')),
+              ...controller.players.map(
+                (p) => DataColumn(label: _buildHeaderCell(p.name)),
               ),
-              ...controller.players.map((p) {
-                final v = row.values[p.playerId] ?? 0.0;
-                return DataCell(
-                  v < 0
-                      ? CircleAvatar(
-                        backgroundColor: Colors.red,
-                        radius: 18,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Text(
-                              v.toStringAsFixed(1),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      : Text(
-                        v.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+            ],
+            rows:
+                controller.roundRows.map((row) {
+                  return DataRow(
+                    cells: [
+                      DataCell(
+                        _buildRoundCell(
+                          row.roundNumber == null
+                              ? 'Total'
+                              : '${row.roundNumber}',
+                          isHeader: true,
                         ),
                       ),
-                );
-              }),
-            ],
-          );
-        }).toList();
+                      ...controller.players.map((p) {
+                        final v = row.values[p.playerId] ?? 0.0;
+                        return DataCell(_buildScoreCell(v));
+                      }),
+                    ],
+                  );
+                }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(columns: columns, rows: rows),
+  Widget _buildHeaderCell(String text) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(text, textAlign: TextAlign.center),
+  );
+
+  Widget _buildRoundCell(String text, {bool isHeader = false}) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+        color: isHeader ? Colors.blue.shade600 : Colors.black,
+      ),
+    ),
+  );
+
+  Widget _buildScoreCell(double value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: value < 0 ? Colors.red.shade50 : Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child:
+          value < 0
+              ? Text(
+                value.toStringAsFixed(1),
+                style: TextStyle(
+                  color: Colors.red.shade600,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+              : Text(
+                value.toStringAsFixed(1),
+                style: TextStyle(
+                  color: Colors.green.shade800,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
     );
   }
 }
@@ -386,110 +592,104 @@ class WinnerTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.winnerList.isEmpty) return const SizedBox.shrink();
-
-    final columns = const [
-      DataColumn(
-        label: Text(
-          'Player',
-          style: TextStyle(fontFamily: 'Roboto', fontSize: 16),
-        ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(1),
+            spreadRadius: 2,
+            blurRadius: 8,
+          ),
+        ],
       ),
-      DataColumn(
-        label: Text(
-          'Score',
-          style: TextStyle(fontFamily: 'Roboto', fontSize: 16),
-        ),
-      ),
-    ];
-
-    final rows =
-        controller.winnerList
-            .asMap()
-            .map((index, m) {
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.emoji_events, color: Colors.orange.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  'Final Standings',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...controller.winnerList.asMap().entries.map((entry) {
+              final index = entry.key;
+              final m = entry.value;
               final name = m['name'] as String;
               final total = m['totalScore'] as double;
-              final position = index + 1;
+              final isFirst = index == 0;
 
-              return MapEntry(
-                index,
-                DataRow(
-                  cells: [
-                    DataCell(
-                      Row(
-                        children: [
-                          _getPositionIcon(position),
-                          const SizedBox(width: 8),
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: isFirst ? Colors.amber.shade50 : null,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  leading: _buildMedal(index + 1),
+                  title: Text(
+                    name,
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontWeight: isFirst ? FontWeight.bold : FontWeight.normal,
+                      color:
+                          isFirst
+                              ? Colors.amber.shade800
+                              : Colors.grey.shade800,
+                    ),
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          total < 0 ? Colors.red.shade50 : Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      total.toStringAsFixed(1),
+                      style: TextStyle(
+                        color:
+                            total < 0
+                                ? Colors.red.shade600
+                                : Colors.green.shade800,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    DataCell(
-                      total < 0
-                          ? CircleAvatar(
-                            backgroundColor: Colors.red,
-                            radius: 18,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Text(
-                                  total.toStringAsFixed(1),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                          : Text(
-                            total.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 16,
-                            ),
-                          ),
-                    ),
-                  ],
+                  ),
                 ),
               );
-            })
-            .values
-            .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          'Winners',
-          style: Get.textTheme.titleMedium!.copyWith(fontFamily: 'Roboto'),
+            }),
+          ],
         ),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(columns: columns, rows: rows),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _getPositionIcon(int position) {
+  Widget _buildMedal(int position) {
     switch (position) {
       case 1:
-        return const Icon(Icons.military_tech, color: Colors.yellow);
+        return Icon(Icons.emoji_events, color: Colors.amber);
       case 2:
-        return const Icon(Icons.military_tech, color: Colors.grey);
+        return Icon(Icons.emoji_events, color: Colors.grey);
       case 3:
-        return const Icon(Icons.military_tech, color: Colors.brown);
+        return Icon(Icons.emoji_events, color: Colors.brown);
       default:
-        return const Icon(Icons.star_border, color: Colors.grey);
+        return Icon(Icons.star, color: Colors.blue.shade300);
     }
   }
 }
